@@ -1,0 +1,142 @@
+# =============================================================================
+# CPAP Monitoring — Telegram family summary
+# =============================================================================
+# Sends a daily Telegram message to a family group chat reporting Maria's
+# previous night CPAP usage, so relatives who don't use Home Assistant (e.g.
+# her children/siblings-in-law) can keep track of her adherence.
+#
+# Audience: her children, not her. She isn't in the group, so the message
+# talks ABOUT her in the third person and any advice is aimed at them. (The
+# Alexa morning summary is the one that speaks TO her.)
+#
+# Requires the built-in `telegram_bot` integration, set up via the UI with
+# the group registered as an allowed chat ID (see docs/installation-guide.md,
+# section "Telegram family notifications"). Replace REPLACE_WITH_FAMILY_CHAT_ID
+# below with the group chat ID once the bot has been added to the group.
+#
+# Toggle: input_boolean.cpap_telegram_family_notify
+#
+# Runs at 08:35 and again at 11:00 as a fallback: if the myAir cloud sync for
+# last night is still late at 08:35 (e.g. she wakes up / turns off the machine
+# late), most_recent_sleep_date won't be fresh yet and the 08:35 run is
+# skipped. The 11:00 run re-checks and sends once the data has arrived.
+# input_text.cpap_telegram_family_last_sent tracks which night's date was
+# last sent, so whichever run succeeds first, the other doesn't duplicate it.
+#
+# The message text is written fresh each run by Gemini (ai_task.generate_data,
+# same AI Task entity as user1_morning_summary.yaml), using the real numbers below
+# as facts it may not alter. Falls back to the original fixed template if the
+# AI call fails or isn't configured. See docs/installation-guide.md section
+# "AI-personalized morning summary" for setup.
+# =============================================================================
+
+- id: cpap_telegram_family_summary
+  alias: "CPAP — Telegram Family Summary"
+  description: >
+    Telegram message to the family group with Maria's previous night CPAP
+    usage (hours, AHI, mask leak, myAir score). Tries at 08:35 (5 minutes
+    after the Alexa morning summary) and again at 11:00 in case last night's
+    data hadn't synced yet.
+  mode: single
+  trigger:
+    - platform: time
+      at: "08:35:00"
+    - platform: time
+      at: "11:00:00"
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_telegram_family_notify
+      state: "on"
+    - condition: template
+      value_template: >
+        {% set last = states('sensor.most_recent_sleep_date') %}
+        {% if last in ['unknown', 'unavailable'] %}
+          false
+        {% else %}
+          {{ (now().date() - (last | as_datetime | as_local).date()).days <= 1 }}
+        {% endif %}
+    - condition: template
+      value_template: >
+        {{ states('sensor.most_recent_sleep_date') != states('input_text.cpap_telegram_family_last_sent') }}
+  action:
+    - variables:
+        hours: "{{ (states('sensor.cpap_usage_minutes') | float(0) / 60) | round(1) }}"
+        ahi: "{{ states('sensor.cpap_ahi_events_per_hour') | float(0) | round(1) }}"
+        leak: "{{ states('sensor.cpap_mask_leak') | float(0) | round(1) }}"
+        score: "{{ states('sensor.cpap_total_myair_score') | float(0) | round(0) | int }}"
+        ahi_alert: "{{ is_state('binary_sensor.cpap_user1_ahi_alert', 'on') }}"
+        leak_alert: "{{ is_state('binary_sensor.cpap_user1_leak_alert', 'on') }}"
+        usage_alert: "{{ is_state('binary_sensor.cpap_user1_usage_alert', 'on') }}"
+        dia_ref: >
+          {%- set dias = ['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado','domingo'] -%}
+          {%- set dt = states('sensor.most_recent_sleep_date') | as_datetime | as_local -%}
+          {{ dias[dt.weekday()] ~ ' - ' ~ dt.strftime('%d/%m/%Y') }}
+    - action: ai_task.generate_data
+      continue_on_error: true
+      data:
+        entity_id: ai_task.YOUR_AI_TASK_ENTITY  # REPLACE: see docs/installation-guide.md
+        task_name: cpap_telegram_family_summary
+        instructions: >
+          Você escreve uma mensagem curta para o grupo de Telegram da família
+          sobre o uso do CPAP da Maria na noite de {{ dia_ref }}. Use
+          apenas os dados reais abaixo — não invente nenhum número ou fato
+          clínico adicional:
+
+          - Uso: {{ hours }}h
+          - IAH (eventos de apneia por hora): {{ ahi }}
+          - Vazamento de máscara: {{ leak }} L/min
+          - Score myAir: {{ score }}
+          - Alerta de pouco tempo de uso: {{ 'sim' if usage_alert else 'não' }}
+          - Alerta de vazamento de máscara: {{ 'sim' if leak_alert else 'não' }}
+          - Alerta de eventos de apneia: {{ 'sim' if ahi_alert else 'não' }}
+
+          Quem lê o grupo são os FILHOS da Maria, não ela. Ela não está
+          no grupo e não lê estas mensagens. Por isso fale SOBRE a Maria,
+          sempre em terceira pessoa ("ela usou", "a máscara dela"), e nunca
+          se dirija a ela (nada de "Maria, tente...", "você usou",
+          "ajuste a sua máscara"). Qualquer recomendação é para os filhos,
+          dizendo o que eles podem fazer por ela (por exemplo: ligar para
+          ela, lembrar de usar o aparelho por mais tempo, ajudar a ajustar
+          as tiras da máscara).
+
+          Escreva em português do Brasil, tom natural e caloroso, como um
+          irmão comentando o resultado com os outros irmãos no grupo,
+          variando a forma de dizer a cada vez, sem soar repetitivo.
+          Estrutura: uma linha de título curta citando "CPAP Maria" e a
+          data acima, depois os números principais (uso, IAH, vazamento,
+          score) de forma legível, e por fim um comentário breve. Se algum
+          alerta for "sim", diga com gentileza o que os filhos podem
+          observar ou fazer. Se nenhum alerta for "sim", comente que a noite
+          dela foi tranquila. Pode usar até
+          1 emoji e negrito simples com asteriscos (*assim*) no título, sem
+          exagero. Não use listas com marcadores — texto corrido, no máximo
+          4 a 5 linhas. Responda com UMA única versão da mensagem, sem
+          oferecer alternativas.
+      response_variable: ai_summary
+    - action: telegram_bot.send_message
+      data:
+        chat_id: REPLACE_WITH_FAMILY_CHAT_ID  # REPLACE: family Telegram group ID (negative number)
+        message: >
+          {%- if ai_summary is defined and ai_summary.data is defined and (ai_summary.data | trim) != '' -%}
+          {{ ai_summary.data | trim }}
+          {%- else -%}
+          🫁 *Uso CPAP Maria — noite de {{ dia_ref }}*
+          Uso: {{ hours }}h · AHI: {{ ahi }} ev/h · Vazamento: {{ leak }} L/min · Score: {{ score }}
+          {% if usage_alert %}
+          ⚠️ Uso abaixo do recomendado (mínimo 4h).
+          {% endif %}
+          {% if leak_alert %}
+          ⚠️ Vazamento de máscara acima do ideal — pode valer a pena ajudar a ajustar as tiras.
+          {% endif %}
+          {% if ahi_alert %}
+          ⚠️ Eventos de apneia elevados esta noite.
+          {% endif %}
+          {% if not (usage_alert or leak_alert or ahi_alert) %}
+          ✅ Tudo dentro do esperado.
+          {% endif %}
+          {%- endif %}
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.cpap_telegram_family_last_sent
+      data:
+        value: "{{ states('sensor.most_recent_sleep_date') }}"

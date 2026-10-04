@@ -1,0 +1,77 @@
+# =============================================================================
+# CPAP Monitoring — João morning summary automation
+# =============================================================================
+# Reads João's CPAP nightly report via Alexa TTS at 09:00.
+# Skips if data is older than 2 days (device offline or no cloud sync).
+# Also sends push notification and persistent notification in HA.
+# =============================================================================
+
+- id: cpap_user2_morning_summary
+  alias: "CPAP User2 — Morning Summary"
+  description: >
+    Daily 09:00 summary of João's previous night CPAP session via Alexa TTS,
+    push notification, and HA persistent notification.
+  mode: single
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user2
+      state: "on"
+    - condition: template
+      value_template: >
+        {% set last = states('sensor.most_recent_sleep_date_2') %}
+        {% if last in ['unknown', 'unavailable'] %}
+          false
+        {% else %}
+          {{ (now().date() - (last | as_datetime | as_local).date()).days <= 1 }}
+        {% endif %}
+  action:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - delay:
+        seconds: 1
+    - action: notify.send_message
+      data:
+        message: >
+          {%- set ahi_alert   = is_state('binary_sensor.cpap_user2_ahi_alert',   'on') -%}
+          {%- set leak_alert  = is_state('binary_sensor.cpap_user2_leak_alert',  'on') -%}
+          {%- set usage_alert = is_state('binary_sensor.cpap_user2_usage_alert', 'on') -%}
+          {%- set any_alert   = ahi_alert or leak_alert or usage_alert -%}
+          Bom dia, João!
+          {% if any_alert %}
+            O seu CPAP registrou algo diferente esta noite.
+            {% if usage_alert %}Você usou a máscara por pouco tempo. Tente dormir com ela por mais horas.{% endif %}
+            {% if leak_alert %}A máscara pode estar com vazamento. Ajuste as tiras antes de dormir.{% endif %}
+            {% if ahi_alert %}Você teve alguns eventos de apneia. Verifique se a máscara está bem encaixada.{% endif %}
+          {% else %}
+            O seu CPAP funcionou bem esta noite. Você teve uma boa noite de sono!
+          {% endif %}
+      target:
+        entity_id: notify.USER2_ECHO_announce
+    - delay:
+        seconds: 10
+    - action: switch.turn_on
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - action: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP João — Resumo matinal"
+        message: >
+          {%- set hours = (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) -%}
+          {%- set ahi   = states('sensor.cpap_ahi_events_per_hour_2') | float(0) | round(1) -%}
+          {%- set leak  = states('sensor.cpap_mask_leak_2') | float(0) | round(1) -%}
+          {%- set score = states('sensor.cpap_total_myair_score_2') | float(0) | round(0) | int -%}
+          {{ hours }}h de uso · AHI {{ ahi }} ev/h · Leak {{ leak }} L/min · Score {{ score }}
+    - action: persistent_notification.create
+      data:
+        title: "CPAP João — Resumo matinal"
+        message: >
+          {%- set hours = (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) -%}
+          {%- set ahi   = states('sensor.cpap_ahi_events_per_hour_2') | float(0) | round(1) -%}
+          {%- set leak  = states('sensor.cpap_mask_leak_2') | float(0) | round(1) -%}
+          {%- set score = states('sensor.cpap_total_myair_score_2') | float(0) | round(0) | int -%}
+          {{ hours }}h de uso · AHI {{ ahi }} ev/h · Leak {{ leak }} L/min · Score {{ score }}
+        notification_id: cpap_user2_morning_summary

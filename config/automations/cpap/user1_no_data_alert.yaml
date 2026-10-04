@@ -1,0 +1,89 @@
+# =============================================================================
+# CPAP Monitoring — Maria "no new data" alert
+# =============================================================================
+# Runs once a day at 11:15 (after the 08:30 morning summary and both Telegram
+# attempts at 08:35/11:00 have had their chance) and warns on all three
+# channels if myAir hasn't synced a session newer than yesterday — in
+# practice this means Maria didn't sleep with the CPAP that night.
+#
+# input_text.cpap_user1_no_data_alerted_date guards against repeating the
+# alert more than once per calendar day; it resets naturally once a fresh
+# session arrives (the freshness condition below stops matching).
+# =============================================================================
+
+- id: cpap_user1_no_data_alert
+  alias: "CPAP — User1 No Data Alert"
+  description: >
+    Warns via Alexa, push/persistent notification and Telegram when Maria's
+    CPAP hasn't synced a new session in more than 1 day.
+  mode: single
+  trigger:
+    - platform: time
+      at: "11:15:00"
+  condition:
+    - condition: template
+      value_template: >
+        {% set last = states('sensor.most_recent_sleep_date') %}
+        {% if last in ['unknown', 'unavailable'] %}
+          true
+        {% else %}
+          {{ (now().date() - (last | as_datetime | as_local).date()).days > 1 }}
+        {% endif %}
+    - condition: template
+      value_template: >
+        {{ states('input_text.cpap_user1_no_data_alerted_date') != now().strftime('%Y-%m-%d') }}
+  action:
+    - variables:
+        last_session: "{{ states('sensor.most_recent_sleep_date') }}"
+        days_missing: >
+          {% if last_session in ['unknown', 'unavailable'] %}
+            desconhecido
+          {% else %}
+            {{ (now().date() - (last_session | as_datetime | as_local).date()).days }}
+          {% endif %}
+    - if:
+        - condition: state
+          entity_id: input_boolean.cpap_alerts_user1
+          state: "on"
+      then:
+        - action: notify.send_message
+          data:
+            message: >
+              Maria, não há registro de uso do seu CPAP há {{ days_missing }} dias.
+              Tente dormir com ele hoje à noite.
+          target:
+            entity_id:
+              - notify.USER1_ECHO_1_announce
+              - notify.USER1_ECHO_2_announce
+        - action: notify.mobile_app_YOUR_PHONE
+          data:
+            title: "CPAP Maria — sem uso registrado"
+            message: >
+              Sem uso registrado há {{ days_missing }} dias
+              (última noite registrada: {{ last_session }}).
+        - action: persistent_notification.create
+          data:
+            title: "CPAP Maria — sem uso registrado"
+            message: >
+              Sem uso registrado há {{ days_missing }} dias
+              (última noite registrada: {{ last_session }}).
+            notification_id: cpap_user1_no_data_alert
+    - if:
+        - condition: state
+          entity_id: input_boolean.cpap_telegram_family_notify
+          state: "on"
+      then:
+        - action: telegram_bot.send_message
+          data:
+            chat_id: REPLACE_WITH_FAMILY_CHAT_ID  # REPLACE: family Telegram group ID (negative number)
+            message: >
+              {%- set dias = ['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado','domingo'] -%}
+              {%- set hoje = dias[now().weekday()] ~ ' - ' ~ now().strftime('%d/%m/%Y') -%}
+              ⚠️ *Sem registro de uso do CPAP da Maria na {{ hoje }}*
+              (última noite registrada: {{ last_session }}, há {{ days_missing }} dias).
+              Ela não dormiu com o aparelho — vale dar um toque.
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.cpap_user1_no_data_alerted_date
+      data:
+        value: "{{ now().strftime('%Y-%m-%d') }}"

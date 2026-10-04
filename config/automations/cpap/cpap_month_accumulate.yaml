@@ -1,0 +1,100 @@
+# =============================================================================
+# CPAP Monitoring — Monthly accumulator (User1)
+# =============================================================================
+# Every time a new night's myAir data arrives, adds it to the running monthly
+# totals (input_number helpers in cpap_monitoring.yaml) that
+# cpap_monthly_report.yaml reads on day 1 to send an average-based summary.
+#
+# This exists because HA's recorder only keeps purge_keep_days (10 days) of
+# raw history — far short of the 30-day window needed for a monthly average —
+# so the totals are accumulated night by night instead of queried after the
+# fact.
+# =============================================================================
+
+- id: cpap_month_accumulate
+  alias: "CPAP — Monthly Accumulate (User1)"
+  description: >
+    Adds Maria's most recent night to the running monthly totals used by
+    "CPAP — Monthly Report (User1)". Guards against double-counting the
+    same night via input_text.cpap_month_last_accumulated_date.
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date
+  condition:
+    - condition: template
+      value_template: >
+        {{ states('sensor.most_recent_sleep_date') not in ['unknown', 'unavailable'] }}
+    - condition: template
+      value_template: >
+        {{ states('sensor.most_recent_sleep_date') != states('input_text.cpap_month_last_accumulated_date') }}
+  action:
+    - if:
+        - condition: template
+          value_template: >
+            {{ states('input_number.cpap_month_nights_count') | float(0) == 0 }}
+      then:
+        - action: input_text.set_value
+          target:
+            entity_id: input_text.cpap_month_period_start
+          data:
+            value: "{{ states('sensor.most_recent_sleep_date') }}"
+
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.cpap_month_usage_minutes_sum
+      data:
+        value: >
+          {{ states('input_number.cpap_month_usage_minutes_sum') | float(0) +
+             states('sensor.cpap_usage_minutes') | float(0) }}
+
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.cpap_month_ahi_sum
+      data:
+        value: >
+          {{ states('input_number.cpap_month_ahi_sum') | float(0) +
+             states('sensor.cpap_ahi_events_per_hour') | float(0) }}
+
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.cpap_month_leak_sum
+      data:
+        value: >
+          {{ states('input_number.cpap_month_leak_sum') | float(0) +
+             states('sensor.cpap_mask_leak') | float(0) }}
+
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.cpap_month_nights_count
+      data:
+        value: "{{ states('input_number.cpap_month_nights_count') | float(0) + 1 }}"
+
+    # 4h/6h são os pontos de referência fixos do próprio relatório da Resmed —
+    # propositalmente não reaproveita input_number.cpap_usage_min_hours (o
+    # limiar configurável do alerta noturno), que é um valor diferente.
+    - if:
+        - condition: template
+          value_template: "{{ states('sensor.cpap_usage_minutes') | float(0) >= 240 }}"
+      then:
+        - action: input_number.set_value
+          target:
+            entity_id: input_number.cpap_month_nights_ge4h
+          data:
+            value: "{{ states('input_number.cpap_month_nights_ge4h') | float(0) + 1 }}"
+
+    - if:
+        - condition: template
+          value_template: "{{ states('sensor.cpap_usage_minutes') | float(0) >= 360 }}"
+      then:
+        - action: input_number.set_value
+          target:
+            entity_id: input_number.cpap_month_nights_ge6h
+          data:
+            value: "{{ states('input_number.cpap_month_nights_ge6h') | float(0) + 1 }}"
+
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.cpap_month_last_accumulated_date
+      data:
+        value: "{{ states('sensor.most_recent_sleep_date') }}"

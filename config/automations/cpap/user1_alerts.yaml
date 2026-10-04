@@ -1,0 +1,121 @@
+# =============================================================================
+# CPAP Monitoring — Maria alert automations
+# =============================================================================
+# Triggered when new nightly data arrives (most_recent_sleep_date changes).
+# Conditions read the binary_sensors defined in cpap_monitoring.yaml.
+# Each alert sends a push notification to João's phone and a persistent
+# notification in the HA UI.
+# =============================================================================
+
+# AHI alert
+- id: cpap_user1_ahi_alert
+  alias: "CPAP User1 — AHI Alert"
+  description: >
+    Notifies João when Maria's nightly AHI exceeds
+    the configured threshold (input_number.cpap_ahi_threshold, default 5 ev/h).
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date
+  condition:
+    - condition: state
+      entity_id: binary_sensor.cpap_user1_ahi_alert
+      state: "on"
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user1
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - service: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP Maria — AHI elevado"
+        message: >
+          AHI de {{ states('sensor.cpap_ahi_events_per_hour') | round(1) }} ev/h
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Verifique o ajuste da máscara.
+    - service: persistent_notification.create
+      data:
+        title: "CPAP Maria — AHI elevado"
+        message: >
+          AHI de {{ states('sensor.cpap_ahi_events_per_hour') | round(1) }} ev/h
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Verifique o ajuste da máscara.
+        notification_id: cpap_user1_ahi_alert
+
+# Mask leak alert
+- id: cpap_user1_leak_alert
+  alias: "CPAP User1 — Mask Leak Alert"
+  description: >
+    Notifies João when Maria's mask leak exceeds
+    the configured threshold (input_number.cpap_leak_threshold, default 24 L/min).
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date
+  condition:
+    - condition: state
+      entity_id: binary_sensor.cpap_user1_leak_alert
+      state: "on"
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user1
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - service: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP Maria — Vazamento de máscara"
+        message: >
+          Vazamento de {{ states('sensor.cpap_mask_leak') | round(1) }} L/min
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Oriente a ajustar as tiras da máscara.
+    - service: persistent_notification.create
+      data:
+        title: "CPAP Maria — Vazamento de máscara"
+        message: >
+          Vazamento de {{ states('sensor.cpap_mask_leak') | round(1) }} L/min
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Oriente a ajustar as tiras da máscara.
+        notification_id: cpap_user1_leak_alert
+
+# Low usage alert
+- id: cpap_user1_usage_alert
+  alias: "CPAP User1 — Low Usage Alert"
+  description: >
+    Notifies João when Maria used CPAP less than the
+    configured minimum (input_number.cpap_usage_min_hours, default 4h).
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date
+  condition:
+    - condition: state
+      entity_id: binary_sensor.cpap_user1_usage_alert
+      state: "on"
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user1
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - service: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP Maria — Uso baixo"
+        message: >
+          Maria usou o CPAP por apenas
+          {{ (states('sensor.cpap_usage_minutes') | float(0) / 60) | round(1) }} horas
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Mínimo recomendado: 4 horas.
+    - service: persistent_notification.create
+      data:
+        title: "CPAP Maria — Uso baixo"
+        message: >
+          Maria usou o CPAP por apenas
+          {{ (states('sensor.cpap_usage_minutes') | float(0) / 60) | round(1) }} horas
+          na noite de {{ states('sensor.most_recent_sleep_date') }}.
+          Mínimo recomendado: 4 horas.
+        notification_id: cpap_user1_usage_alert

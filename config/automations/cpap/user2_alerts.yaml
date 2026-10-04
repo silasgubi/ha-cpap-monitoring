@@ -1,0 +1,156 @@
+# =============================================================================
+# CPAP Monitoring — João alert automations
+# =============================================================================
+# Triggered when new nightly data arrives (most_recent_sleep_date_2 changes).
+# Each alert: push notification to iPhone + HA persistent notification + Alexa TTS.
+# Alexa TTS follows the same DND cycle as your own sleep-mode automation.
+# =============================================================================
+
+# AHI alert
+- id: cpap_user2_ahi_alert
+  alias: "CPAP User2 — AHI Alert"
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date_2
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user2
+      state: "on"
+    - condition: state
+      entity_id: binary_sensor.cpap_user2_ahi_alert
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - action: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP João — AHI elevado"
+        message: >
+          AHI de {{ states('sensor.cpap_ahi_events_per_hour_2') | round(1) }} ev/h
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Verifique o ajuste da máscara.
+    - action: persistent_notification.create
+      data:
+        title: "CPAP João — AHI elevado"
+        message: >
+          AHI de {{ states('sensor.cpap_ahi_events_per_hour_2') | round(1) }} ev/h
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Verifique o ajuste da máscara.
+        notification_id: cpap_user2_ahi_alert
+    - action: switch.turn_off
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - delay:
+        seconds: 1
+    - action: notify.send_message
+      data:
+        message: João, o seu CPAP registrou muitos eventos de apneia na última noite. Verifique o ajuste da máscara.
+      target:
+        entity_id: notify.USER2_ECHO_announce
+    - delay:
+        seconds: 5
+    - action: switch.turn_on
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+
+# Mask leak alert
+- id: cpap_user2_leak_alert
+  alias: "CPAP User2 — Mask Leak Alert"
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date_2
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user2
+      state: "on"
+    - condition: state
+      entity_id: binary_sensor.cpap_user2_leak_alert
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - action: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP João — Vazamento de máscara"
+        message: >
+          Vazamento de {{ states('sensor.cpap_mask_leak_2') | round(1) }} L/min
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Ajuste as tiras da máscara.
+    - action: persistent_notification.create
+      data:
+        title: "CPAP João — Vazamento de máscara"
+        message: >
+          Vazamento de {{ states('sensor.cpap_mask_leak_2') | round(1) }} L/min
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Ajuste as tiras da máscara.
+        notification_id: cpap_user2_leak_alert
+    - action: switch.turn_off
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - delay:
+        seconds: 1
+    - action: notify.send_message
+      data:
+        message: João, o seu CPAP detectou vazamento de máscara na última noite. Ajuste as tiras da máscara.
+      target:
+        entity_id: notify.USER2_ECHO_announce
+    - delay:
+        seconds: 5
+    - action: switch.turn_on
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+
+# Low usage alert
+- id: cpap_user2_usage_alert
+  alias: "CPAP User2 — Low Usage Alert"
+  mode: restart
+  trigger:
+    - platform: state
+      entity_id: sensor.most_recent_sleep_date_2
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user2
+      state: "on"
+    - condition: state
+      entity_id: binary_sensor.cpap_user2_usage_alert
+      state: "on"
+    - condition: time
+      after: "07:00:00"
+      before: "22:00:00"
+  action:
+    - action: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP João — Uso baixo"
+        message: >
+          Você usou o CPAP por apenas
+          {{ (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) }} horas
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Mínimo recomendado: 4 horas.
+    - action: persistent_notification.create
+      data:
+        title: "CPAP João — Uso baixo"
+        message: >
+          Você usou o CPAP por apenas
+          {{ (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) }} horas
+          na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
+          Mínimo recomendado: 4 horas.
+        notification_id: cpap_user2_usage_alert
+    - action: switch.turn_off
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - delay:
+        seconds: 1
+    - action: notify.send_message
+      data:
+        message: João, você usou o CPAP por pouco tempo na última noite. Tente usar por pelo menos 4 horas.
+      target:
+        entity_id: notify.USER2_ECHO_announce
+    - delay:
+        seconds: 5
+    - action: switch.turn_on
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb

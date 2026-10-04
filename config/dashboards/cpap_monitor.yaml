@@ -1,0 +1,663 @@
+title: CPAP Monitor
+icon: mdi:lungs
+path: cpap-monitor
+views:
+  # ===========================================================================
+  # VIEW 1 — Overview: both users side by side
+  # ===========================================================================
+  - title: Overview
+    path: overview
+    icon: mdi:home-analytics
+    cards:
+      - type: custom:mushroom-title-card
+        title: CPAP Sleep Therapy Monitor
+        subtitle: ResMed AirSense 10 — Daily Summary
+
+      # -----------------------------------------------------------------------
+      # User 1 (monitored user — active alerts)
+      # -----------------------------------------------------------------------
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.cpap_alerts_user1
+            name: Alertas Maria
+            icon: mdi:bell
+            tap_action:
+              action: toggle
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.cpap_alerts_user2
+            name: Alertas João
+            icon: mdi:bell
+            tap_action:
+              action: toggle
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.cpap_telegram_family_notify
+            name: Telegram Família
+            icon: mdi:send-circle
+            tap_action:
+              action: toggle
+
+      - type: custom:mushroom-title-card
+        title: Maria
+        subtitle: >
+          Last session: {{ states('sensor.most_recent_sleep_date') }}
+        icon: mdi:account-heart
+        icon_color: pink
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_ahi_events_per_hour
+            primary: AHI
+            secondary: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v < 5 %}Excellent
+              {% elif v < 15 %}Mild
+              {% elif v < 30 %}Moderate
+              {% else %}Severe{% endif %}
+            icon: mdi:heart-pulse
+            icon_color: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 5 %}green{% elif v < 15 %}orange{% else %}red{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_usage_minutes
+            primary: Usage
+            secondary: >
+              {% set h = (states('sensor.cpap_usage_minutes') | float(0) / 60) | round(1) %}
+              {% if h >= 4 %}{{ h }}h — OK
+              {% elif h > 0 %}{{ h }}h — low
+              {% else %}No data{% endif %}
+            icon: mdi:clock-check
+            icon_color: >
+              {% set h = states('sensor.cpap_usage_minutes') | float(0) / 60 %}
+              {% if h >= 4 %}green{% elif h >= 2 %}orange{% elif h > 0 %}red{% else %}grey{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_mask_leak
+            primary: Leak
+            secondary: >
+              {% set v = states('sensor.cpap_mask_leak') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v < 10 %}Excellent
+              {% elif v < 24 %}Acceptable
+              {% else %}High{% endif %}
+            icon: mdi:air-filter
+            icon_color: >
+              {% set v = states('sensor.cpap_mask_leak') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 10 %}green{% elif v < 24 %}orange{% else %}red{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_total_myair_score
+            primary: Score
+            secondary: >
+              {% set v = states('sensor.cpap_total_myair_score') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v >= 70 %}Good
+              {% elif v >= 50 %}Fair
+              {% else %}Low{% endif %}
+            icon: mdi:star
+            icon_color: >
+              {% set v = states('sensor.cpap_total_myair_score') | float(-1) %}
+              {% if v < 0 %}grey{% elif v >= 70 %}green{% elif v >= 50 %}orange{% else %}red{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+      # -----------------------------------------------------------------------
+      # User 2 (passive monitoring — view only)
+      # -----------------------------------------------------------------------
+      - type: custom:mushroom-title-card
+        title: João
+        subtitle: >
+          Last session: {{ states('sensor.most_recent_sleep_date_2') }}
+        icon: mdi:account
+        icon_color: blue
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_ahi_events_per_hour_2
+            primary: AHI
+            secondary: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour_2') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v < 5 %}Excellent
+              {% elif v < 15 %}Mild
+              {% elif v < 30 %}Moderate
+              {% else %}Severe{% endif %}
+            icon: mdi:heart-pulse
+            icon_color: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour_2') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 5 %}green{% elif v < 15 %}orange{% else %}red{% endif %}
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_usage_minutes_2
+            primary: Usage
+            secondary: >
+              {% set h = (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) %}
+              {% if h >= 4 %}{{ h }}h — OK
+              {% elif h > 0 %}{{ h }}h — low
+              {% else %}No data{% endif %}
+            icon: mdi:clock-check
+            icon_color: >
+              {% set h = states('sensor.cpap_usage_minutes_2') | float(0) / 60 %}
+              {% if h >= 4 %}green{% elif h >= 2 %}orange{% elif h > 0 %}red{% else %}grey{% endif %}
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_mask_leak_2
+            primary: Leak
+            secondary: >
+              {% set v = states('sensor.cpap_mask_leak_2') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v < 10 %}Excellent
+              {% elif v < 24 %}Acceptable
+              {% else %}High{% endif %}
+            icon: mdi:air-filter
+            icon_color: >
+              {% set v = states('sensor.cpap_mask_leak_2') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 10 %}green{% elif v < 24 %}orange{% else %}red{% endif %}
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_total_myair_score_2
+            primary: Score
+            secondary: >
+              {% set v = states('sensor.cpap_total_myair_score_2') | float(-1) %}
+              {% if v < 0 %}No data
+              {% elif v >= 70 %}Good
+              {% elif v >= 50 %}Fair
+              {% else %}Low{% endif %}
+            icon: mdi:star
+            icon_color: >
+              {% set v = states('sensor.cpap_total_myair_score_2') | float(-1) %}
+              {% if v < 0 %}grey{% elif v >= 70 %}green{% elif v >= 50 %}orange{% else %}red{% endif %}
+            layout: vertical
+
+  # ===========================================================================
+  # VIEW 2 — Maria detail: full metrics + 7-day history
+  # ===========================================================================
+  - title: Maria
+    path: user1
+    icon: mdi:account-heart
+    cards:
+      - type: custom:mushroom-title-card
+        title: Maria — CPAP Detail
+        subtitle: >
+          Last session: {{ states('sensor.most_recent_sleep_date') }}
+          · Synced: {{ states('sensor.cpap_sleep_data_last_collected') | as_timestamp | timestamp_custom('%d/%m %H:%M') }}
+        icon: mdi:account-heart
+        icon_color: pink
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.cpap_alerts_user1
+            name: Alertas ativos
+            icon: mdi:bell
+            tap_action:
+              action: toggle
+          - type: custom:mushroom-template-card
+            entity: input_boolean.cpap_alerts_user1
+            primary: Resumo matinal
+            secondary: >
+              {% if is_state('input_boolean.cpap_alerts_user1', 'on') %}
+                08:30 — Echo da Maria
+              {% else %}
+                Desativado
+              {% endif %}
+            icon: mdi:alarm
+            icon_color: >
+              {% if is_state('input_boolean.cpap_alerts_user1', 'on') %}green{% else %}grey{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            entity: input_boolean.cpap_telegram_family_notify
+            primary: Telegram Família
+            secondary: >
+              {% if is_state('input_boolean.cpap_telegram_family_notify', 'on') %}
+                08:35 — resumo diário no grupo
+              {% else %}
+                Desativado
+              {% endif %}
+            icon: mdi:send-circle
+            icon_color: >
+              {% if is_state('input_boolean.cpap_telegram_family_notify', 'on') %}green{% else %}grey{% endif %}
+            layout: vertical
+            tap_action:
+              action: toggle
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_ahi_events_per_hour
+            primary: AHI
+            secondary: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour') | float(-1) %}
+              {% if v < 5 %}Excellent (< 5){% elif v < 15 %}Mild apnea{% elif v < 30 %}Moderate{% elif v >= 0 %}Severe{% else %}No data{% endif %}
+            icon: mdi:heart-pulse
+            icon_color: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 5 %}green{% elif v < 15 %}orange{% else %}red{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_mask_leak
+            primary: Mask Leak
+            secondary: >
+              {% set v = states('sensor.cpap_mask_leak') | float(-1) %}
+              {% if v < 0 %}No data
+              {% else %}{{ v | round(1) }} L/min —
+              {% if v < 10 %}Excellent{% elif v < 24 %}Acceptable{% else %}High — check fit{% endif %}{% endif %}
+            icon: mdi:air-filter
+            icon_color: >
+              {% set v = states('sensor.cpap_mask_leak') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 10 %}green{% elif v < 24 %}orange{% else %}red{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_usage_minutes
+            primary: Usage
+            secondary: >
+              {{ states('sensor.cpap_usage_time') }}
+              ({{ (states('sensor.cpap_usage_minutes') | float(0) / 60) | round(1) }}h)
+            icon: mdi:clock-check
+            icon_color: >
+              {% set h = states('sensor.cpap_usage_minutes') | float(0) / 60 %}
+              {% if h >= 4 %}green{% elif h >= 2 %}orange{% elif h > 0 %}red{% else %}grey{% endif %}
+            layout: vertical
+            tap_action:
+              action: more-info
+
+          - type: gauge
+            entity: sensor.cpap_total_myair_score
+            name: myAir Score
+            min: 0
+            max: 100
+            severity:
+              green: 70
+              yellow: 50
+              red: 0
+            needle: true
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_mask_on_off
+            primary: Mask On/Off
+            secondary: >
+              {{ states('sensor.cpap_mask_on_off') }} times
+            icon: mdi:face-mask
+            icon_color: blue
+            layout: vertical
+            tap_action:
+              action: more-info
+
+      # -----------------------------------------------------------------------
+      # Acumulador mensal — ver automations/cpap/cpap_month_*.yaml. Os totais
+      # são somados noite a noite porque o recorder só guarda 10 dias; o
+      # relatório do dia 1 lê estas médias e zera tudo em seguida.
+      # -----------------------------------------------------------------------
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: Mês em curso
+            subtitle: >-
+              {% set n = states('input_number.cpap_month_nights_count') | float(0) | int %}
+              {% set ini = states('input_text.cpap_month_period_start') %}
+              {% if n > 0 %}{% if ini not in ['unknown', 'unavailable', ''] %}Desde {{ (ini | as_datetime | as_local).strftime('%d/%m') }} · {% endif %}{{ n }} noite{{ 's' if n != 1 else '' }} com dados · relatório no dia 1 às 08:40{% else %}Nenhuma noite acumulada neste período{% endif %}
+
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                entity: input_number.cpap_month_usage_minutes_sum
+                primary: Uso médio
+                secondary: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n > 0 %}{% set m = states('input_number.cpap_month_usage_minutes_sum') | float(0) / n %}{{ (m / 60) | int }}h {{ (m % 60) | round(0) | int }}min{% else %}Sem dados{% endif %}
+                icon: mdi:clock-check-outline
+                icon_color: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n <= 0 %}grey{% else %}{% set h = states('input_number.cpap_month_usage_minutes_sum') | float(0) / n / 60 %}{% if h >= 4 %}green{% elif h >= 2 %}orange{% else %}red{% endif %}{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+
+              - type: custom:mushroom-template-card
+                entity: input_number.cpap_month_ahi_sum
+                primary: IAH médio
+                secondary: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n > 0 %}{{ (states('input_number.cpap_month_ahi_sum') | float(0) / n) | round(1) }} ev/h{% else %}Sem dados{% endif %}
+                icon: mdi:heart-pulse
+                icon_color: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n <= 0 %}grey{% else %}{% set v = states('input_number.cpap_month_ahi_sum') | float(0) / n %}{% if v < 5 %}green{% elif v < 15 %}orange{% else %}red{% endif %}{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+
+              - type: custom:mushroom-template-card
+                entity: input_number.cpap_month_leak_sum
+                primary: Vazamento médio
+                secondary: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n > 0 %}{{ (states('input_number.cpap_month_leak_sum') | float(0) / n) | round(1) }} L/min{% else %}Sem dados{% endif %}
+                icon: mdi:air-filter
+                icon_color: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n <= 0 %}grey{% else %}{% set v = states('input_number.cpap_month_leak_sum') | float(0) / n %}{% if v < 10 %}green{% elif v < 24 %}orange{% else %}red{% endif %}{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                entity: input_number.cpap_month_nights_ge4h
+                primary: Noites ≥ 4h
+                secondary: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% set g = states('input_number.cpap_month_nights_ge4h') | float(0) | int %}
+                  {% if n > 0 %}{{ g }}/{{ n | int }} ({{ (g / n * 100) | round(0) | int }}%){% else %}Sem dados{% endif %}
+                icon: mdi:calendar-check
+                icon_color: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n <= 0 %}grey{% else %}{% set p = states('input_number.cpap_month_nights_ge4h') | float(0) / n * 100 %}{% if p >= 70 %}green{% elif p >= 50 %}orange{% else %}red{% endif %}{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+
+              - type: custom:mushroom-template-card
+                entity: input_number.cpap_month_nights_ge6h
+                primary: Noites ≥ 6h
+                secondary: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% set g = states('input_number.cpap_month_nights_ge6h') | float(0) | int %}
+                  {% if n > 0 %}{{ g }}/{{ n | int }} ({{ (g / n * 100) | round(0) | int }}%){% else %}Sem dados{% endif %}
+                icon: mdi:calendar-star
+                icon_color: >-
+                  {% set n = states('input_number.cpap_month_nights_count') | float(0) %}
+                  {% if n <= 0 %}grey{% else %}{% set p = states('input_number.cpap_month_nights_ge6h') | float(0) / n * 100 %}{% if p >= 50 %}green{% elif p >= 30 %}orange{% else %}red{% endif %}{% endif %}
+                layout: vertical
+                tap_action:
+                  action: more-info
+
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-title-card
+            title: 7-Day Trends
+            subtitle: Historical performance
+
+          - type: history-graph
+            title: AHI — Apnea Events/Hour
+            hours_to_show: 168
+            entities:
+              - entity: sensor.cpap_ahi_events_per_hour
+                name: AHI (events/h)
+
+          - type: history-graph
+            title: Usage Time
+            hours_to_show: 168
+            entities:
+              - entity: sensor.cpap_usage_minutes
+                name: Usage (min)
+
+          - type: history-graph
+            title: Mask Leak
+            hours_to_show: 168
+            entities:
+              - entity: sensor.cpap_mask_leak
+                name: Leak (L/min)
+
+          - type: history-graph
+            title: myAir Score
+            hours_to_show: 168
+            entities:
+              - entity: sensor.cpap_total_myair_score
+                name: Score (0–100)
+
+      - type: markdown
+        content: |
+          ### Clinical Reference — ResMed myAir Guide
+          | Metric | Good | Warning | Alert |
+          |--------|------|---------|-------|
+          | AHI | < 5 ev/h | 5–15 ev/h | > 15 ev/h |
+          | Mask Leak | < 10 L/min | 10–24 L/min | > 24 L/min |
+          | Usage | ≥ 4 h | 2–4 h | < 2 h |
+          | myAir Score | ≥ 70 | 50–70 | < 50 |
+
+      - type: markdown
+        content: |
+          ### Como funcionam os controles
+          **Chaves liga/desliga** (ficam como você deixar — não mudam sozinhas):
+          - **Alertas ativos** — habilita os avisos automáticos da Maria (Alexa + push): alertas de AHI, vazamento, uso baixo e o resumo matinal das 08:30.
+          - **Telegram Família** — habilita o resumo diário das 08:35 no grupo "Cpap Maria" do Telegram. Ligou uma vez, manda todo dia sozinho.
+
+          **Botões de teste** (abaixo) — disparam o aviso na hora, uma única vez, para conferir se está funcionando. Ignoram horário e ignoram as chaves acima. Não ligam nem desligam nada.
+
+      - type: custom:mushroom-title-card
+        title: Testes
+        subtitle: Dispara avisos manualmente (ignora condições de horário e toggle)
+
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Teste AHI
+            icon: mdi:heart-pulse
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user1_ahi_alert
+          - type: button
+            name: Teste Vazamento
+            icon: mdi:air-filter
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user1_mask_leak_alert
+          - type: button
+            name: Teste Uso Baixo
+            icon: mdi:clock-alert
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user1_low_usage_alert
+          - type: button
+            name: Resumo Matinal
+            icon: mdi:alarm
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_morning_summary
+          - type: button
+            name: Teste Telegram
+            icon: mdi:send-circle
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_telegram_family_summary
+
+      - type: custom:mushroom-title-card
+        title: Atividade recente
+        subtitle: Últimas ações das automações CPAP (alertas, resumos, Telegram)
+
+      - type: logbook
+        hours_to_show: 48
+        entities:
+          - automation.cpap_user1_ahi_alert
+          - automation.cpap_user1_mask_leak_alert
+          - automation.cpap_user1_low_usage_alert
+          - automation.cpap_morning_summary
+          - automation.cpap_telegram_family_summary
+          - input_boolean.cpap_alerts_user1
+          - input_boolean.cpap_telegram_family_notify
+
+  # ===========================================================================
+  # VIEW 3 — João detail: active alerts + morning summary
+  # ===========================================================================
+  - title: João
+    path: user2
+    icon: mdi:account
+    cards:
+      - type: custom:mushroom-title-card
+        title: João — CPAP Detail
+        subtitle: >
+          Last session: {{ states('sensor.most_recent_sleep_date_2') }}
+          · Synced: {{ states('sensor.cpap_sleep_data_last_collected_2') | as_timestamp | timestamp_custom('%d/%m %H:%M') }}
+        icon: mdi:account
+        icon_color: blue
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.cpap_alerts_user2
+            name: Alertas ativos
+            icon: mdi:bell
+            tap_action:
+              action: toggle
+          - type: custom:mushroom-template-card
+            entity: input_boolean.cpap_alerts_user2
+            primary: Resumo matinal
+            secondary: >
+              {% if is_state('input_boolean.cpap_alerts_user2', 'on') %}
+                09:00 — Alexa + celular
+              {% else %}
+                Desativado
+              {% endif %}
+            icon: mdi:alarm
+            icon_color: >
+              {% if is_state('input_boolean.cpap_alerts_user2', 'on') %}green{% else %}grey{% endif %}
+            layout: vertical
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_ahi_events_per_hour_2
+            primary: AHI
+            secondary: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour_2') | float(-1) %}
+              {% if v < 5 %}Excellent (< 5){% elif v < 15 %}Mild apnea{% elif v < 30 %}Moderate{% elif v >= 0 %}Severe{% else %}No data{% endif %}
+            icon: mdi:heart-pulse
+            icon_color: >
+              {% set v = states('sensor.cpap_ahi_events_per_hour_2') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 5 %}green{% elif v < 15 %}orange{% else %}red{% endif %}
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_mask_leak_2
+            primary: Mask Leak
+            secondary: >
+              {% set v = states('sensor.cpap_mask_leak_2') | float(-1) %}
+              {% if v < 0 %}No data
+              {% else %}{{ v | round(1) }} L/min{% endif %}
+            icon: mdi:air-filter
+            icon_color: >
+              {% set v = states('sensor.cpap_mask_leak_2') | float(-1) %}
+              {% if v < 0 %}grey{% elif v < 10 %}green{% elif v < 24 %}orange{% else %}red{% endif %}
+            layout: vertical
+
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.cpap_usage_minutes_2
+            primary: Usage
+            secondary: >
+              {{ states('sensor.cpap_usage_time_2') }}
+              ({{ (states('sensor.cpap_usage_minutes_2') | float(0) / 60) | round(1) }}h)
+            icon: mdi:clock-check
+            icon_color: >
+              {% set h = states('sensor.cpap_usage_minutes_2') | float(0) / 60 %}
+              {% if h >= 4 %}green{% elif h >= 2 %}orange{% elif h > 0 %}red{% else %}grey{% endif %}
+            layout: vertical
+
+          - type: gauge
+            entity: sensor.cpap_total_myair_score_2
+            name: myAir Score
+            min: 0
+            max: 100
+            severity:
+              green: 70
+              yellow: 50
+              red: 0
+            needle: true
+
+      - type: history-graph
+        title: AHI — 7 Days
+        hours_to_show: 168
+        entities:
+          - entity: sensor.cpap_ahi_events_per_hour_2
+            name: AHI (events/h)
+
+      - type: history-graph
+        title: Usage — 7 Days
+        hours_to_show: 168
+        entities:
+          - entity: sensor.cpap_usage_minutes_2
+            name: Usage (min)
+
+      - type: history-graph
+        title: Mask Leak — 7 Days
+        hours_to_show: 168
+        entities:
+          - entity: sensor.cpap_mask_leak_2
+            name: Leak (L/min)
+
+      - type: custom:mushroom-title-card
+        title: Testes
+        subtitle: Dispara avisos manualmente (ignora condições de horário e toggle)
+
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Teste AHI
+            icon: mdi:heart-pulse
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user2_ahi_alert
+          - type: button
+            name: Teste Vazamento
+            icon: mdi:air-filter
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user2_mask_leak_alert
+          - type: button
+            name: Teste Uso Baixo
+            icon: mdi:clock-alert
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user2_low_usage_alert
+          - type: button
+            name: Resumo Matinal
+            icon: mdi:alarm
+            tap_action:
+              action: call-service
+              service: automation.trigger
+              target:
+                entity_id: automation.cpap_user2_morning_summary

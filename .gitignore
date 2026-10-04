@@ -1,0 +1,18 @@
+# Private context and tooling — never publish
+CLAUDE_CONTEXT.md
+.private/
+.claude/
+
+# Personal screenshots / attachments
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Editor / AI-tool artifacts
+.snapshots/
+*.code-workspace
+
+# OS artifacts
+.DS_Store
+Thumbs.db

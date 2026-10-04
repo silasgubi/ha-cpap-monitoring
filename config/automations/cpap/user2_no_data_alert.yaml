@@ -1,0 +1,83 @@
+# =============================================================================
+# CPAP Monitoring — João "no new data" alert
+# =============================================================================
+# Runs once a day at 11:30 and warns João (Alexa TTS + push + persistent
+# notification) if his own CPAP hasn't synced a session newer than yesterday
+# — an incentive reminder to use the machine, not just a sync problem check.
+#
+# No Telegram here: the family group only gets updates about Maria.
+#
+# input_text.cpap_user2_no_data_alerted_date guards against repeating the
+# alert more than once per calendar day.
+# =============================================================================
+
+- id: cpap_user2_no_data_alert
+  alias: "CPAP User2 — No Data Alert"
+  description: >
+    Warns João via Alexa, push and persistent notification when his CPAP
+    hasn't synced a new session in more than 1 day.
+  mode: single
+  trigger:
+    - platform: time
+      at: "11:30:00"
+  condition:
+    - condition: state
+      entity_id: input_boolean.cpap_alerts_user2
+      state: "on"
+    - condition: template
+      value_template: >
+        {% set last = states('sensor.most_recent_sleep_date_2') %}
+        {% if last in ['unknown', 'unavailable'] %}
+          true
+        {% else %}
+          {{ (now().date() - (last | as_datetime | as_local).date()).days > 1 }}
+        {% endif %}
+    - condition: template
+      value_template: >
+        {{ states('input_text.cpap_user2_no_data_alerted_date') != now().strftime('%Y-%m-%d') }}
+  action:
+    - variables:
+        last_session: "{{ states('sensor.most_recent_sleep_date_2') }}"
+        days_missing: >
+          {% if last_session in ['unknown', 'unavailable'] %}
+            desconhecido
+          {% else %}
+            {{ (now().date() - (last_session | as_datetime | as_local).date()).days }}
+          {% endif %}
+    - action: switch.turn_off
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - delay:
+        seconds: 1
+    - action: notify.send_message
+      data:
+        message: >
+          João, seu CPAP não envia dados novos há {{ days_missing }} dias.
+          Que tal dormir com ele hoje à noite? Faz bem pro seu sono.
+      target:
+        entity_id: notify.USER2_ECHO_announce
+    - delay:
+        seconds: 10
+    - action: switch.turn_on
+      target:
+        entity_id: switch.USER2_ECHO_do_not_disturb
+    - action: notify.mobile_app_YOUR_PHONE
+      data:
+        title: "CPAP João — sem dados novos"
+        message: >
+          Sem sincronização há {{ days_missing }} dias
+          (última noite registrada: {{ last_session }}).
+          Que tal usar o aparelho hoje à noite?
+    - action: persistent_notification.create
+      data:
+        title: "CPAP João — sem dados novos"
+        message: >
+          Sem sincronização há {{ days_missing }} dias
+          (última noite registrada: {{ last_session }}).
+          Que tal usar o aparelho hoje à noite?
+        notification_id: cpap_user2_no_data_alert
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.cpap_user2_no_data_alerted_date
+      data:
+        value: "{{ now().strftime('%Y-%m-%d') }}"
