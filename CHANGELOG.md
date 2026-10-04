@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — 2026-10-04
+## 1.0.0 (2026-10-04)
 
 First public release. In daily use since June 2026, with a parent's CPAP and the caregiver's own.
 
