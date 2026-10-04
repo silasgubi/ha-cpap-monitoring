@@ -1,5 +1,6 @@
 # Private context and tooling — never publish
-CLAUDE_CONTEXT.md
+CLAUDE.md
+CLAUDE.local.md
 .private/
 .claude/
 
