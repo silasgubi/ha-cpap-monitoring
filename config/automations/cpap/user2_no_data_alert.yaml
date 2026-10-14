@@ -9,6 +9,10 @@
 #
 # input_text.cpap_user2_no_data_alerted_date guards against repeating the
 # alert more than once per calendar day.
+#
+# The Alexa TTS is skipped while input_boolean.YOUR_DO_NOT_DISTURB is on (push and
+# persistent notification still go out). No DND toggling here: the Do Not
+# Disturb automation is the only owner of the Alexa's native DND switch.
 # =============================================================================
 
 - id: cpap_user2_no_data_alert
@@ -44,23 +48,24 @@
           {% else %}
             {{ (now().date() - (last_session | as_datetime | as_local).date()).days }}
           {% endif %}
-    - action: switch.turn_off
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
-    - delay:
-        seconds: 1
-    - action: notify.send_message
-      data:
-        message: >
-          João, seu CPAP não envia dados novos há {{ days_missing }} dias.
-          Que tal dormir com ele hoje à noite? Faz bem pro seu sono.
-      target:
-        entity_id: notify.USER2_ECHO_announce
-    - delay:
-        seconds: 10
-    - action: switch.turn_on
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
+    # Speech only when Do Not Disturb is off (no DND off/on cycle anymore)
+    - if:
+        - condition: state
+          entity_id: input_boolean.YOUR_DO_NOT_DISTURB
+          state: "off"
+      then:
+        - action: notify.send_message
+          # Alexa offline must not block the push below
+          continue_on_error: true
+          data:
+            message: >
+              João, seu CPAP não envia dados novos há {{ days_missing }} dias.
+              Que tal dormir com ele hoje à noite? Faz bem pro seu sono.
+          target:
+            entity_id: notify.USER2_ECHO_announce
+        # Keeps the previous order: the announcement plays before the push arrives
+        - delay:
+            seconds: 10
     - action: notify.mobile_app_YOUR_PHONE
       data:
         title: "CPAP João — sem dados novos"

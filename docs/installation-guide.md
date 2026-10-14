@@ -70,7 +70,7 @@ Every value you must change is in CAPITALS. Search the copied files for `REPLACE
 | `notify.mobile_app_YOUR_PHONE` | The caregiver's phone, from the Companion app (`notify.mobile_app_<phone name>`) | `user1_alerts`, `user1_no_data_alert`, all `user2_*` |
 | `notify.USER1_ECHO_1_announce`, `notify.USER1_ECHO_2_announce` | Maria's Echo devices (Alexa Media Player creates `notify.<device>_announce`). Using only one? Delete the second line. | `user1_morning_summary`, `user1_no_data_alert` |
 | `notify.USER2_ECHO_announce` | João's Echo | all `user2_*` |
-| `switch.USER2_ECHO_do_not_disturb` | That Echo's Do Not Disturb switch. The automation turns it off to speak, then back on. If you don't use DND at night, delete the `switch.turn_off` / `delay` / `switch.turn_on` steps. | all `user2_*` |
+| `input_boolean.YOUR_DO_NOT_DISTURB` | Your own "Do Not Disturb" toggle (a helper, not the Echo's DND switch). João's Echo only speaks while it is **off**. Push and persistent notifications go out either way. **If this entity doesn't exist, the condition never passes and the Echo never speaks.** No such toggle? Either create an `input_boolean` and leave it off, or delete the `if` block and keep only its `notify.send_message` step. | all `user2_*` |
 | `REPLACE_WITH_FAMILY_CHAT_ID` | The Telegram group ID, a negative number (section 8) | `telegram_family_summary`, `cpap_monthly_report`, `user1_no_data_alert` |
 | `ai_task.YOUR_AI_TASK_ENTITY` | Your AI Task entity (section 9). Not using AI? Delete the whole `ai_task.generate_data` step. The message then always uses the fixed text. | `user1_morning_summary`, `telegram_family_summary`, `cpap_monthly_report` |
 | `Maria`, `João` | The real first names. They appear in titles, spoken text and AI prompts. | all |

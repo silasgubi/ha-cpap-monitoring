@@ -5,6 +5,7 @@
 - Spoken morning summary retries at 09:30 and 10:30 when myAir syncs late (she turns the machine off late), and speaks at most once a day. Before, a late sync meant no summary that day.
 - New on-demand trigger: firing `cpap_summary_request` with `moment: night` reads last night's summary at bedtime, with a good-night greeting, on the bedroom Echo only. Ignored if the summary already played today or there is no fresh data.
 - Comments that were still in Portuguese (monthly accumulator) are now in English.
+- **Breaking (second user):** the `user2_*` automations no longer switch the Echo's Do Not Disturb off and back on. They speak only while a new placeholder, `input_boolean.YOUR_DO_NOT_DISTURB`, is off, and the Alexa step can fail without blocking the push (`continue_on_error`). Push and persistent notifications always go out. `switch.USER2_ECHO_do_not_disturb` is gone. When updating, point the new placeholder at your own Do Not Disturb toggle, or create one and leave it off. Without it, the Echo never speaks.
 
 ## 1.0.0 (2026-10-04)
 

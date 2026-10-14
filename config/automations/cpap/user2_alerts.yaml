@@ -3,7 +3,10 @@
 # =============================================================================
 # Triggered when new nightly data arrives (most_recent_sleep_date_2 changes).
 # Each alert: push notification to iPhone + HA persistent notification + Alexa TTS.
-# Alexa TTS follows the same DND cycle as your own sleep-mode automation.
+# Alexa TTS only plays while input_boolean.YOUR_DO_NOT_DISTURB is off; push and
+# persistent notification always go out. These automations never touch the
+# Alexa's native DND switch: the Do Not Disturb automation is its only owner
+# (turning it back on here used to re-enable DND even when Do Not Disturb was off).
 # =============================================================================
 
 # AHI alert
@@ -39,21 +42,19 @@
           na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
           Verifique o ajuste da máscara.
         notification_id: cpap_user2_ahi_alert
-    - action: switch.turn_off
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
-    - delay:
-        seconds: 1
-    - action: notify.send_message
-      data:
-        message: João, o seu CPAP registrou muitos eventos de apneia na última noite. Verifique o ajuste da máscara.
-      target:
-        entity_id: notify.USER2_ECHO_announce
-    - delay:
-        seconds: 5
-    - action: switch.turn_on
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
+    # Speech only when Do Not Disturb is off (no DND off/on cycle anymore)
+    - if:
+        - condition: state
+          entity_id: input_boolean.YOUR_DO_NOT_DISTURB
+          state: "off"
+      then:
+        - action: notify.send_message
+          # Alexa offline must not block the push below
+          continue_on_error: true
+          data:
+            message: João, o seu CPAP registrou muitos eventos de apneia na última noite. Verifique o ajuste da máscara.
+          target:
+            entity_id: notify.USER2_ECHO_announce
 
 # Mask leak alert
 - id: cpap_user2_leak_alert
@@ -88,21 +89,19 @@
           na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
           Ajuste as tiras da máscara.
         notification_id: cpap_user2_leak_alert
-    - action: switch.turn_off
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
-    - delay:
-        seconds: 1
-    - action: notify.send_message
-      data:
-        message: João, o seu CPAP detectou vazamento de máscara na última noite. Ajuste as tiras da máscara.
-      target:
-        entity_id: notify.USER2_ECHO_announce
-    - delay:
-        seconds: 5
-    - action: switch.turn_on
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
+    # Speech only when Do Not Disturb is off (no DND off/on cycle anymore)
+    - if:
+        - condition: state
+          entity_id: input_boolean.YOUR_DO_NOT_DISTURB
+          state: "off"
+      then:
+        - action: notify.send_message
+          # Alexa offline must not block the push below
+          continue_on_error: true
+          data:
+            message: João, o seu CPAP detectou vazamento de máscara na última noite. Ajuste as tiras da máscara.
+          target:
+            entity_id: notify.USER2_ECHO_announce
 
 # Low usage alert
 - id: cpap_user2_usage_alert
@@ -139,18 +138,16 @@
           na noite de {{ states('sensor.most_recent_sleep_date_2') }}.
           Mínimo recomendado: 4 horas.
         notification_id: cpap_user2_usage_alert
-    - action: switch.turn_off
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
-    - delay:
-        seconds: 1
-    - action: notify.send_message
-      data:
-        message: João, você usou o CPAP por pouco tempo na última noite. Tente usar por pelo menos 4 horas.
-      target:
-        entity_id: notify.USER2_ECHO_announce
-    - delay:
-        seconds: 5
-    - action: switch.turn_on
-      target:
-        entity_id: switch.USER2_ECHO_do_not_disturb
+    # Speech only when Do Not Disturb is off (no DND off/on cycle anymore)
+    - if:
+        - condition: state
+          entity_id: input_boolean.YOUR_DO_NOT_DISTURB
+          state: "off"
+      then:
+        - action: notify.send_message
+          # Alexa offline must not block the push below
+          continue_on_error: true
+          data:
+            message: João, você usou o CPAP por pouco tempo na última noite. Tente usar por pelo menos 4 horas.
+          target:
+            entity_id: notify.USER2_ECHO_announce

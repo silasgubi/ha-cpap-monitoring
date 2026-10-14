@@ -59,7 +59,7 @@ Maria's per-night alerts go only to the caregiver, not to her Alexa. She hears o
 
 **AI writes the words, never the numbers.** Gemini receives the real values as a list of facts and is told not to add any number or clinical claim. The fixed template stays as a fallback.
 
-**Do Not Disturb on João's Echo.** If his bedroom Echo stays on DND overnight, the `user2_*` automations switch DND off, speak, then switch it back on.
+**Do Not Disturb on João's Echo.** The `user2_*` automations never touch the Echo's own DND switch. They speak only while `input_boolean.YOUR_DO_NOT_DISTURB` is off, and skip the speech otherwise. Push and persistent notifications always go out. An earlier version switched the Echo's DND off, spoke and switched it back on. That fought with whatever else manages DND in the house: turning it back on left the Echo silenced even when Do Not Disturb was meant to be off.
 
 ## Thresholds
 

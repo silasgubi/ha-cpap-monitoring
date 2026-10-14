@@ -31,7 +31,7 @@ The Telegram prompts must say who reads the group (her children) and that she is
 ## Alexa runs the automation but says nothing
 
 1. Make sure the `notify.<device>_announce` entity exists and belongs to the right Echo (**Developer Tools → Actions**, `notify.send_message`, pick the entity, send a test).
-2. Do Not Disturb on: the `user2_*` automations switch it off for a few seconds. For Maria's Echo, check DND in the Alexa app.
+2. Do Not Disturb: the `user2_*` automations skip the speech while `input_boolean.YOUR_DO_NOT_DISTURB` is on, or if that entity doesn't exist (see the placeholders in the [installation guide](installation-guide.md)). They don't change the Echo's own DND, so also check DND in the Alexa app, for João's Echo and for Maria's.
 3. For an Echo in another Amazon account, see [second-alexa-account.md](second-alexa-account.md).
 
 ## The monthly report shows far fewer nights than it should
