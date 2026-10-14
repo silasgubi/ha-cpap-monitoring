@@ -309,9 +309,9 @@ views:
               action: more-info
 
       # -----------------------------------------------------------------------
-      # Acumulador mensal — ver automations/cpap/cpap_month_*.yaml. Os totais
-      # são somados noite a noite porque o recorder só guarda 10 dias; o
-      # relatório do dia 1 lê estas médias e zera tudo em seguida.
+      # Monthly accumulator — see automations/cpap/cpap_month_*.yaml. Totals
+      # are summed night by night because the recorder only keeps 10 days; the
+      # report on the 1st reads these averages and then resets everything.
       # -----------------------------------------------------------------------
       - type: vertical-stack
         cards:

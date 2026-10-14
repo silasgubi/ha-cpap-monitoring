@@ -70,9 +70,9 @@
       data:
         value: "{{ states('input_number.cpap_month_nights_count') | float(0) + 1 }}"
 
-    # 4h/6h são os pontos de referência fixos do próprio relatório da Resmed —
-    # propositalmente não reaproveita input_number.cpap_usage_min_hours (o
-    # limiar configurável do alerta noturno), que é um valor diferente.
+    # 4h/6h are the fixed reference points of ResMed's own report —
+    # this deliberately does not reuse input_number.cpap_usage_min_hours (the
+    # configurable threshold of the nightly alert), which is a different value.
     - if:
         - condition: template
           value_template: "{{ states('sensor.cpap_usage_minutes') | float(0) >= 240 }}"

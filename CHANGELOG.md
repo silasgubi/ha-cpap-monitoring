@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Spoken morning summary retries at 09:30 and 10:30 when myAir syncs late (she turns the machine off late), and speaks at most once a day. Before, a late sync meant no summary that day.
+- New on-demand trigger: firing `cpap_summary_request` with `moment: night` reads last night's summary at bedtime, with a good-night greeting, on the bedroom Echo only. Ignored if the summary already played today or there is no fresh data.
+- Comments that were still in Portuguese (monthly accumulator) are now in English.
+
 ## 1.0.0 (2026-10-04)
 
 First public release. In daily use since June 2026, with a parent's CPAP and the caregiver's own.

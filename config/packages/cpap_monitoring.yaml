@@ -175,13 +175,13 @@ input_number:
     mode: box
 
   # ---------------------------------------------------------------------------
-  # Acumulador do relatório mensal (User1) — ver automations/cpap_month_*.yaml
-  # O recorder do HA só guarda purge_keep_days (10 dias) de histórico bruto, o
-  # que é curto demais para calcular uma média de 30 dias depois do fato. Em vez
-  # disso, cpap_month_accumulate.yaml soma cada noite nova a estes totais, e
-  # cpap_monthly_report.yaml lê a média no dia 1 e zera tudo para o próximo mês.
-  # SEM `initial:` de propósito: com initial definido o HA volta o valor ao
-  # inicial a cada restart e zera o acumulador (bug real em set-out/2026).
+  # Monthly report accumulator (User1) — see automations/cpap_month_*.yaml
+  # HA's recorder only keeps purge_keep_days (10 days) of raw history, which
+  # is too short to compute a 30-day average after the fact. Instead,
+  # cpap_month_accumulate.yaml adds each new night to these totals, and
+  # cpap_monthly_report.yaml reads the averages on the 1st and resets them for the next month.
+  # NO `initial:` on purpose: with initial set, HA puts the value back to it
+  # on every restart and wipes the accumulator (a real bug in Sep-Oct 2026).
   # ---------------------------------------------------------------------------
   cpap_month_usage_minutes_sum:
     name: "CPAP Mês — soma de minutos de uso"
@@ -255,7 +255,7 @@ input_text:
     max: 20
 
   # ---------------------------------------------------------------------------
-  # Acumulador do relatório mensal (User1) — ver automations/cpap_month_*.yaml
+  # Monthly report accumulator (User1) — see automations/cpap_month_*.yaml
   # ---------------------------------------------------------------------------
   cpap_month_last_accumulated_date:
     name: "CPAP Mês — última noite já somada ao acumulador"

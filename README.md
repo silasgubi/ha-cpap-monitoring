@@ -25,7 +25,7 @@ Replace both names with your own (a search and replace is enough). If you only h
 | When | What | Who receives it |
 | --- | --- | --- |
 | New night synced (07:00–22:00) | Alert if AHI, mask leak or usage is out of range | Maria: caregiver's phone (push) · João: his phone + his Alexa |
-| 08:30 | Spoken "good morning" with last night's results | Maria, on her Echo devices |
+| 08:30, retries 09:30 and 10:30 | Spoken "good morning" with last night's results, once a day (the retries cover late myAir syncs). Later than that, a bedtime routine can ask for it at night with the `cpap_summary_request` event | Maria, on her Echo devices (at night, the bedroom one only) |
 | 08:35, retry 11:00 | Daily summary in the family Telegram group | Maria's children |
 | 09:00 | Morning summary | João (Alexa + push) |
 | 11:15 | "No use recorded" warning if myAir has nothing newer than yesterday | Maria (Alexa), caregiver (push), children (Telegram) |
